@@ -1,0 +1,142 @@
+
+services:
+
+  # --------------------------------------------------
+  # 1. PostgreSQL Database
+  # --------------------------------------------------
+  db:
+    image: postgres:17
+    container_name: dir-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: incident_lab
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    
+    ports:
+     - "127.0.0.1:5433:5432"   
+
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 5s
+      retries: 15
+      start_period: 15s
+
+    networks:
+      - dir-network
+
+
+  # --------------------------------------------------
+  # 2. Automatic PostgreSQL User Provisioning
+  # --------------------------------------------------
+  provision:
+    image: kirankambale/kiran_db_replay_app.1:latest
+    container_name: dir-provision
+
+    entrypoint: ["/bin/bash"]
+    command:
+      - /app/docker/provision/01-create-monitoring-role.sh
+
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: incident_lab
+      PGUSER: postgres
+      PGPASSWORD: postgres
+
+      DB_NAME: incident_lab
+      DB_USER: incident_reader
+      DB_PASSWORD: postgres
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    restart: "no"
+
+    networks:
+      - dir-network
+
+
+  # --------------------------------------------------
+  # 3. DB Incident Replay Application
+  # --------------------------------------------------
+  app:
+    image: kirankambale/kiran_db_replay_app.1:latest
+    container_name: dir-app
+    restart: unless-stopped
+
+    environment:
+      DEMO_MODE: "false"
+      AUTO_MONITOR: "true"
+      DATA_DIR: /data
+
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: incident_lab
+      DB_USER: incident_reader
+      DB_PASSWORD: postgres
+      DB_SSLMODE: disable
+
+      DB_INSTANCE_ID: docker-lab
+      DB_INSTANCE_NAME: Docker PostgreSQL
+      DB_ENVIRONMENT: Docker
+
+      MONITOR_INTERVAL_SECONDS: "15"
+      LONG_QUERY_SECONDS: "30"
+      IDLE_TXN_SECONDS: "60"
+
+      QUERY_TEXT_MODE: redact
+      AUTH_MODE: none
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    volumes:
+      - incident_data:/data
+
+    depends_on:
+      provision:
+        condition: service_completed_successfully
+
+    networks:
+      - dir-network
+
+    read_only: true
+
+    tmpfs:
+      - /tmp
+
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+
+# --------------------------------------------------
+# Persistent Storage
+# --------------------------------------------------
+volumes:
+  postgres_data:
+  incident_data:
+
+
+# --------------------------------------------------
+# Internal Docker Network
+# --------------------------------------------------
+networks:
+  dir-network:
+    driver: bridge

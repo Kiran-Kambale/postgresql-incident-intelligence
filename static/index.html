@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DB Incident Replay</title>
+<meta name="description" content="PostgreSQL production incident intelligence: evidence, blocking analysis and incident workflow.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563eb'/%3E%3Cpath d='M7 20l5-7 4 5 4-9 5 11' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<a class="skip" href="#view">Skip to content</a>
+<div id="app">
+  <aside id="sidebar" aria-label="Primary">
+    <div class="brand"><svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M7 20l5-7 4 5 4-9 5 11" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>DB Incident Replay</span></div>
+    <nav id="nav"></nav>
+    <div class="side-foot"><span id="ver"></span></div>
+  </aside>
+  <div id="main">
+    <header id="topbar">
+      <button id="menu" class="icon-btn" aria-label="Toggle navigation" aria-expanded="false"></button>
+      <div class="tb-group"><label for="instance" class="sr">Instance</label><select id="instance" title="Database instance"></select></div>
+      <div class="tb-group" role="group" aria-label="Time range" id="range"></div>
+      <div class="tb-spacer"></div>
+      <div class="tb-group"><label for="refresh" class="sr">Auto refresh</label><select id="refresh" title="Auto refresh of the dashboard (collection frequency is configured separately)"><option value="0">Refresh: off</option><option value="5">Refresh: 5s</option><option value="10" selected>Refresh: 10s</option><option value="30">Refresh: 30s</option><option value="60">Refresh: 60s</option></select></div>
+      <div class="tb-group"><label for="tz" class="sr">Time zone</label><select id="tz" title="Display time zone. Stored timestamps are UTC."></select></div>
+      <button id="theme" class="icon-btn" title="Toggle light/dark theme" aria-label="Toggle theme"></button>
+      <button id="auth" class="btn small" hidden>Sign in</button>
+      <span id="livedot" class="livedot" title="Dashboard refresh status"></span>
+    </header>
+    <div id="banners"></div>
+    <main id="view" tabindex="-1" aria-live="polite"></main>
+  </div>
+</div>
+<aside id="drawer" role="dialog" aria-modal="true" aria-label="Details" hidden><div class="drawer-head"><h2 id="drawer-title"></h2><button class="icon-btn" id="drawer-close" aria-label="Close details"></button></div><div id="drawer-body"></div></aside>
+<div id="scrim" hidden></div>
+<dialog id="dlg"><form method="dialog" id="dlg-form"><h2 id="dlg-title"></h2><div id="dlg-body"></div><div class="dlg-actions" id="dlg-actions"></div></form></dialog>
+<div id="toasts" role="status" aria-live="polite"></div>
+<noscript>This dashboard needs JavaScript.</noscript>
+<script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

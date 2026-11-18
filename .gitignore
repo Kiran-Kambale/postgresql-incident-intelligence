@@ -1,0 +1,27 @@
+# Local secrets and environment
+.env
+.env.*
+!.env.example
+instances.json
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# macOS / editors
+.DS_Store
+.vscode/
+.idea/
+
+# Local artifacts
+*.log
+
+# Local incident evidence can contain SQL text and connection metadata
+data/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm

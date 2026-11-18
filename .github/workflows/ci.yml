@@ -1,0 +1,35 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { python: ["3.11", "3.12"] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ matrix.python }}" }
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q -m "not live and not e2e"
+  live-postgres:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { pg: ["12", "13", "14", "15", "16", "17"] }
+    services:
+      postgres:
+        image: postgres:${{ matrix.pg }}
+        env: { POSTGRES_PASSWORD: lab_admin_pw, POSTGRES_DB: incident_lab }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements-dev.txt
+      - name: Create the least-privilege monitoring role
+        run: |
+          PGPASSWORD=lab_admin_pw psql -h 127.0.0.1 -U postgres -d incident_lab -v ON_ERROR_STOP=1 -c "CREATE ROLE incident_reader LOGIN PASSWORD 'lab_pw'" -c "GRANT pg_read_all_stats TO incident_reader" -c "GRANT CONNECT ON DATABASE incident_lab TO incident_reader"
+      - run: pytest -q tests/test_live_pg.py
+        # The standby tests need a second cluster (scripts/lab_standby.sh) and are not run here.
+        # NOTE: this matrix is provided so the other PostgreSQL versions can be verified; only 16 had been executed when this was written.
