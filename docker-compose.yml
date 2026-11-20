@@ -1,21 +1,50 @@
+# ==========================================================
+# PostgreSQL Incident Intelligence
+# Single-file Docker deployment
+#
+# Usage:
+#   docker compose up -d
+#
+# Application:
+#   http://localhost:8000
+#
+# PostgreSQL:
+#   localhost:5433
+# ==========================================================
+
+
+# ----------------------------------------------------------
+# CENTRAL CONFIGURATION
+# Change values here. They are reused by the services below.
+# ----------------------------------------------------------
+
+x-config:
+  postgres-database: &postgres-database incident_intelligence
+  postgres-admin-user: &postgres-admin-user postgres
+  postgres-admin-password: &postgres-admin-password "postgres@321"
+
+  monitoring-user: &monitoring-user incident_app
+  monitoring-password: &monitoring-password incident@321
+
 
 services:
 
-  # --------------------------------------------------
+  # ========================================================
   # 1. PostgreSQL Database
-  # --------------------------------------------------
+  # ========================================================
+
   db:
     image: postgres:17
-    container_name: dir-postgres
+    container_name: pii-postgres
     restart: unless-stopped
 
     environment:
-      POSTGRES_DB: incident_lab
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    
+      POSTGRES_DB: *postgres-database
+      POSTGRES_USER: *postgres-admin-user
+      POSTGRES_PASSWORD: *postgres-admin-password
+
     ports:
-     - "127.0.0.1:5433:5432"   
+      - "127.0.0.1:5433:5432"
 
     command:
       - postgres
@@ -38,27 +67,33 @@ services:
       - dir-network
 
 
-  # --------------------------------------------------
+  # ========================================================
   # 2. Automatic PostgreSQL User Provisioning
-  # --------------------------------------------------
+  # ========================================================
+
   provision:
     image: kirankambale/kiran_db_replay_app.1:latest
-    container_name: dir-provision
+    container_name: pii-app-provision
 
-    entrypoint: ["/bin/bash"]
+    entrypoint:
+      - /bin/bash
+
     command:
       - /app/docker/provision/01-create-monitoring-role.sh
 
     environment:
+
+      # PostgreSQL administrator connection
       PGHOST: db
       PGPORT: "5432"
-      PGDATABASE: incident_lab
-      PGUSER: postgres
-      PGPASSWORD: postgres
+      PGDATABASE: *postgres-database
+      PGUSER: *postgres-admin-user
+      PGPASSWORD: *postgres-admin-password
 
-      DB_NAME: incident_lab
-      DB_USER: incident_reader
-      DB_PASSWORD: postgres
+      # Application monitoring account
+      DB_NAME: *postgres-database
+      DB_USER: *monitoring-user
+      DB_PASSWORD: *monitoring-password
 
     depends_on:
       db:
@@ -70,34 +105,41 @@ services:
       - dir-network
 
 
-  # --------------------------------------------------
-  # 3. DB Incident Replay Application
-  # --------------------------------------------------
+  # ========================================================
+  # 3. PostgreSQL Incident Intelligence Application
+  # ========================================================
+
   app:
     image: kirankambale/kiran_db_replay_app.1:latest
-    container_name: dir-app
+    container_name: pii-app
     restart: unless-stopped
 
     environment:
-      DEMO_MODE: "false"
+
+      # Application mode
+      DEMO_MODE: "True"
       AUTO_MONITOR: "true"
       DATA_DIR: /data
 
+      # PostgreSQL connection
       DB_HOST: db
       DB_PORT: "5432"
-      DB_NAME: incident_lab
-      DB_USER: incident_reader
-      DB_PASSWORD: postgres
+      DB_NAME: *postgres-database
+      DB_USER: *monitoring-user
+      DB_PASSWORD: *monitoring-password
       DB_SSLMODE: disable
 
-      DB_INSTANCE_ID: docker-lab
-      DB_INSTANCE_NAME: Docker PostgreSQL
-      DB_ENVIRONMENT: Docker
+      # Database instance information
+      DB_INSTANCE_ID: docker-lab-1
+      DB_INSTANCE_NAME: Kiran-test-Docker-PostgreSQL
+      DB_ENVIRONMENT: Docker-environment
 
+      # Monitoring configuration
       MONITOR_INTERVAL_SECONDS: "15"
       LONG_QUERY_SECONDS: "30"
       IDLE_TXN_SECONDS: "60"
 
+      # Security and query configuration
       QUERY_TEXT_MODE: redact
       AUTH_MODE: none
 
@@ -114,6 +156,7 @@ services:
     networks:
       - dir-network
 
+    # Container security
     read_only: true
 
     tmpfs:
@@ -126,17 +169,19 @@ services:
       - no-new-privileges:true
 
 
-# --------------------------------------------------
-# Persistent Storage
-# --------------------------------------------------
+# ==========================================================
+# PERSISTENT STORAGE
+# ==========================================================
+
 volumes:
   postgres_data:
   incident_data:
 
 
-# --------------------------------------------------
-# Internal Docker Network
-# --------------------------------------------------
+# ==========================================================
+# INTERNAL DOCKER NETWORK
+# ==========================================================
+
 networks:
   dir-network:
     driver: bridge
