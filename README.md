@@ -108,7 +108,7 @@ See [LICENSE](LICENSE).
 - Author: Kiran Kambale
 - GitHub: https://github.com/Kiran-Kambale
 - Repository: https://github.com/Kiran-Kambale/postgresql-incident-intelligence
-
+- Website : http://pgintelligence.in
 ## Copyright
 
 Copyright © 2026 Kiran Kambale.
