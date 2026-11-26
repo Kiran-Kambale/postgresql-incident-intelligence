@@ -98,3 +98,22 @@ Python 3.11+ is required (developed and tested on 3.12).
 ## License
 
 See [LICENSE](LICENSE).
+
+---
+
+## Project Creator
+
+**PostgreSQL Incident Intelligence** is created and maintained by **Kiran Kambale**.
+
+- Author: Kiran Kambale
+- GitHub: https://github.com/Kiran-Kambale
+- Repository: https://github.com/Kiran-Kambale/postgresql-incident-intelligence
+
+## Copyright
+
+Copyright © 2026 Kiran Kambale.
+
+All rights reserved, subject to the permissions and conditions of the MIT License.
+
+See the [LICENSE](LICENSE) file for licensing details.
+
